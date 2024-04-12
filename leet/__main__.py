@@ -1,19 +1,17 @@
 import argparse
 import pathlib
+import sys
 import typing
 import urllib.parse
-from rich.console import Console
-from rich.table import Table
-console = Console()
 
-from leet.config import get_config
-from leet.tests import Tests
+import rich.console
+import rich.table
+from leet import config, runners, templates, tests
 from leet.graphql.question import Question, QuestionRequest
 from leet.graphql.today import TodayRequest
-from leet.templates import QUESTION_MARKDOWN
-from leet.runners import LANG_TO_RUNNER
 from markdownify import markdownify
 
+console = rich.console.Console()
 LANG_TO_EXT = {
     "python3": ".py",
     "javascript": ".js",
@@ -32,6 +30,7 @@ LANG_TO_EXT = {
     "scala": ".scala",
 }
 EXT_TO_LANG = {v: k for k, v in LANG_TO_EXT.items()}
+
 
 def to_markdown(question: Question):
     """
@@ -68,7 +67,7 @@ def to_markdown(question: Question):
         """
         return f"[{question}](https://leetcode.com/problems/{slug}/)"
 
-    return QUESTION_MARKDOWN.format(
+    return templates.QUESTION_MARKDOWN.format(
         id=question.id,
         slug=question.slug,
         difficulty=question.difficulty.name,
@@ -140,9 +139,28 @@ def get_slug(url: str):
         pass
     return url
 
-def human_size(bytes, units=[' bytes','KB','MB','GB','TB', 'PB', 'EB']):
-    """Returns a human readable string representation of bytes. Stolen from https://stackoverflow.com/a/43750422"""
-    return str(bytes) + units[0] if bytes < 1024 else human_size(bytes>>10, units[1:])
+
+def human_size(bytes, units=[" bytes", "KB", "MB", "GB", "TB", "PB", "EB"]):
+    """
+    Returns a human readable string representation of bytes. Stolen from https://stackoverflow.com/a/43750422
+
+    Parameters
+    ----------
+    bytes
+    units
+    """
+    return str(bytes) + units[0] if bytes < 1024 else human_size(bytes >> 10, units[1:])
+
+
+def fallback_function_from_slug(slug: str):
+    """
+    Parameters
+    ----------
+    slug: str
+    """
+    splitted = slug.split("-")
+    return splitted[0] + "".join((word.capitalize() for word in splitted[1:]))
+
 
 def main(args: argparse.Namespace):
     """
@@ -150,7 +168,7 @@ def main(args: argparse.Namespace):
     ----------
     args: Namespace
     """
-    config = get_config()
+    config_content = config.get_config()
     if args.action == "run":
         file = pathlib.Path(args.file)
         if file.is_dir():
@@ -159,32 +177,53 @@ def main(args: argparse.Namespace):
                     file = f
                     break
         if file.with_suffix(".toml").is_file():
-            tests = Tests.from_file(file.with_suffix(".toml"))
+            tests_content = tests.Tests.from_file(file.with_suffix(".toml"))
         elif (file.parent / "tests.toml").is_file():
-            tests = Tests.from_file(file.parent / "tests.toml")
+            tests_content = tests.Tests.from_file(file.parent / "tests.toml")
         else:
             raise ValueError("No tests file found.")
         if args.language in LANG_TO_EXT:
             language = args.language
-        elif tests.language in LANG_TO_EXT:
-            language = tests.language
+        elif tests_content.language in LANG_TO_EXT:
+            language = tests_content.language
         elif file.suffix in EXT_TO_LANG:
             language = EXT_TO_LANG[file.suffix]
         else:
-            language = config.download.language
-        
-        runner = LANG_TO_RUNNER[language]
-        time, cpu, mem = runner.run(code=file.read_text(), function_name=tests.function, tests=tests.tests)
-
-        table = Table(title="Performance Metrics")
-
-        table.add_column("Runtime")
-        table.add_column("CPU Usage")
-        table.add_column("Memory")
-
-        table.add_row(f"{round(time, 2)}ms", f"{round(cpu, 2)}%", human_size(mem))
-        
-        console.print(table)
+            language = config_content.download.language
+        runner = runners.LANG_TO_RUNNER[language]
+        if language in tests_content.function:
+            function_name = tests_content.function[language]
+        elif "*" in tests_content.function:
+            function_name = tests_content.function["*"]
+        else:
+            slug = file.parent.stem
+            num, _, rem = slug.partition("-")
+            if num.isdigit():
+                slug = rem
+            function_name = fallback_function_from_slug(slug)
+        if args.dry:
+            run_id, created = runner.create_file(
+                code=file.read_text(),
+                function_name=function_name,
+                tests=tests_content.tests,
+            )
+            if str(args.output) != "-":
+                output = args.output or file.with_suffix(f".test-{run_id}" + file.suffix)
+                output.write_text(created)
+            else:
+                print(created)
+        else:
+            time, cpu, mem = runner.run(
+                code=file.read_text(),
+                function_name=function_name,
+                tests=tests_content.tests,
+            )
+            table = rich.table.Table(title="Performance Metrics")
+            table.add_column("Runtime")
+            table.add_column("CPU Usage")
+            table.add_column("Memory")
+            table.add_row(f"{round(time, 2)}ms", f"{round(cpu, 2)}%", human_size(mem))
+            console.print(table)
     elif args.action == "download":
         if not args.download_action:
             args.download_action = "all"
@@ -195,7 +234,10 @@ def main(args: argparse.Namespace):
         question_temp = None
         if args.output is None:
             question_temp = QuestionRequest(titleSlug=problem)
-            output = config.download.output / f"{question_temp.id}-{question_temp.slug}"
+            output = (
+                config_content.download.output
+                / f"{question_temp.id}-{question_temp.slug}"
+            )
         else:
             output = pathlib.Path(args.output)
         if output.is_file():
@@ -204,14 +246,14 @@ def main(args: argparse.Namespace):
             elif output.suffix in EXT_TO_LANG:
                 language = EXT_TO_LANG[output.suffix]
             else:
-                language = config.download.language
+                language = config_content.download.language
             output = output.parent
         elif args.language in LANG_TO_EXT:
             language = args.language
         else:
-            language = config.download.language
+            language = config_content.download.language
         if not language in LANG_TO_EXT:
-            language = config.download.language
+            language = config_content.download.language
         # Get the question
         question = question_temp or QuestionRequest(titleSlug=problem)
         # Perform download actions
@@ -220,24 +262,55 @@ def main(args: argparse.Namespace):
             pass
         if args.download_action in ("problem", "all"):
             # Download problem
-            markdown_output = output if output.is_file() else output / "README.md"
-            markdown_output.parent.mkdir(parents=True, exist_ok=True)
-            markdown_output.write_text(to_markdown(question=question))
+            created = to_markdown(question=question)
+            if str(output) != "-":
+                markdown_output = output if output.is_file() else output / "README.md"
+                markdown_output.parent.mkdir(parents=True, exist_ok=True)
+                markdown_output.write_text(created)
+            else:
+                print(created)
         if args.download_action in ("boilerplate", "all"):
             # Download boilerplate
-            if output.is_file():
-                boilerplate_output = output
+            created = boilerplate(question=question, language=language)
+            if str(output) != "-":
+                if output.is_file():
+                    boilerplate_output = output
+                else:
+                    boilerplate_output = (output / "solve").with_suffix(
+                        LANG_TO_EXT[language]
+                    )
+                boilerplate_output.parent.mkdir(parents=True, exist_ok=True)
+                boilerplate_output.write_text(created)
             else:
-                boilerplate_output = (output / "solve").with_suffix(
-                    LANG_TO_EXT[language]
-                )
-            boilerplate_output.parent.mkdir(parents=True, exist_ok=True)
-            boilerplate_output.write_text(
-                boilerplate(question=question, language=language)
-            )
+                print(created)
         if args.download_action in ("tests", "all"):
             # Download tests
-            pass
+            extracted_tests = tests.extract_tests(question.content)
+            try:
+                function_name = tests.get_function_name(question.code_snippets["c"])
+            except Exception:
+                function_name = fallback_function_from_slug(question.slug)
+            function_content = {"*": function_name}
+            try:
+                function_content[language] = runners.LANG_TO_RUNNER[
+                    language
+                ].function_location_from_name(
+                    function_name, question.code_snippets[language]
+                )
+            except Exception:
+                pass
+            created = tests.Tests(
+                function=function_content, language=language, tests=extracted_tests
+            ).dumps()
+            if str(output) != "-":
+                if output.is_file():
+                    tests_output = output
+                else:
+                    tests_output = output / "tests.toml"
+                tests_output.parent.mkdir(parents=True, exist_ok=True)
+                tests_output.write_text(created)
+            else:
+                print(created)
 
 
 def prepare_parser(parser: argparse.ArgumentParser):
@@ -291,6 +364,18 @@ def prepare_parser(parser: argparse.ArgumentParser):
             default=None,
             help="The language to use. If not provided, inferred from the file extension.",
         )
+        parser.add_argument(
+            "--dry",
+            action="store_true",
+            help="Generates a file which can be ran to test the function.",
+        )
+        if "--dry" in sys.argv:
+            parser.add_argument(
+                "--output",
+                action="store",
+                help="The output file to write the test file to.",
+                type=pathlib.Path,
+            )
 
     def prepare_download_parser(parser: argparse.ArgumentParser):
         """
@@ -298,7 +383,9 @@ def prepare_parser(parser: argparse.ArgumentParser):
         ----------
         parser: ArgumentParser
         """
-        parser.add_argument("problem", type=str, help="The problem URL or slug.")
+        parser.add_argument(
+            "problem", type=str, help="The problem URL or slug.", nargs="?"
+        )
         parser.add_argument(
             "--output", "-o", type=pathlib.Path, default=None, help="The output path."
         )

@@ -1,0 +1,10 @@
+language = "python3"
+function = "Solution().longestCommonPrefix"
+
+[[tests]]
+arguments = { "strs" = ["flower","flow","flight"] }
+expected = "fl"
+
+[[tests]]
+arguments = { "strs" = ["dog","racecar","car"] }
+expected = ""

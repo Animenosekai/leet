@@ -13,6 +13,19 @@ import psutil
 class Test:
     arguments: typing.Dict[str, typing.Any]
     expected: typing.Any
+    explanation: typing.Optional[str] = None
+
+    def to_dict(self) -> dict:
+        """
+        Returns
+        -------
+        dict
+        """
+        return {
+            "arguments": self.arguments,
+            "expected": self.expected,
+            "explanation": self.explanation,
+        }
 
 
 class Runner(abc.ABC):
@@ -148,6 +161,19 @@ class Runner(abc.ABC):
         # time = proc.cpu_times().user + proc.cpu_times().system
         return ((time.perf_counter_ns() - start) / 1000000.0, peak_cpu, peak_memory)
 
+    @classmethod
+    def function_location_from_name(cls, function_name: str, boilerplate: str) -> str:
+        """
+        Parameters
+        ----------
+        cls
+        function_name: str
+
+        Returns
+        -------
+        str
+        """
+        return function_name
 
 class CompiledRunner(Runner):
     @classmethod

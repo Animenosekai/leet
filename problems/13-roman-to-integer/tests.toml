@@ -1,0 +1,22 @@
+language = "python3"
+function = "Solution().romanToInt"
+
+[[tests]]
+arguments = { s = "III" }
+expected = 3
+
+[[tests]]
+arguments = { s = "IV" }
+expected = 4
+
+[[tests]]
+arguments = { s = "IX" }
+expected = 9
+
+[[tests]]
+arguments = { s = "LVIII" }
+expected = 58
+
+[[tests]]
+arguments = { s = "MCMXCIV" }
+expected = 1994
