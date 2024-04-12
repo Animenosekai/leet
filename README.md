@@ -4,6 +4,21 @@ Let's solve LeetCode problems with fun ⛑️
 
 This command line tool lets you solve LeetCode problems locally.
 
+## Index
+
+- [Index](#index)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Run](#run)
+  - [Download](#download)
+- [Configuration](#configuration)
+- [Runners](#runners)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [Authors](#authors)
+- [License](#license)
+
 ## Features
 
 - Download problems from LeetCode
@@ -112,3 +127,23 @@ s = "()[]{}"
 You can have an in-depth understanding of the running environments by looking at their respective explanation file :
 
 - [Python 3](./leet/runners/python3.md)
+
+## Deployment
+
+This module is currently in development and might contain bugs.
+
+Feel free to use it in production if you feel like it is suitable for your production even if you may encounter issues.
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open a discussion first to discuss what you would like to change.
+
+Please make sure to update the tests as appropriate.
+
+## Authors
+
+- **Anime no Sekai** — *Initial work* — [Animenosekai](https://github.com/Animenosekai)
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
