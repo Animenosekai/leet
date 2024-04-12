@@ -454,7 +454,7 @@ def prepare_parser(parser: argparse.ArgumentParser):
 
 def entry():
     """The main entrypoint"""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="leet", description="Solve LeetCode problems with fun ⛑️")
     prepare_parser(parser)
     args = parser.parse_args()
     main(args=args)

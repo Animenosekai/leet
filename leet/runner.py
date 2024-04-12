@@ -154,7 +154,7 @@ class Runner(abc.ABC):
         start = time.perf_counter_ns()
         try:
             while proc.is_running():
-                peak_cpu = max(peak_cpu, proc.cpu_percent() / psutil.cpu_count())
+                peak_cpu = max(peak_cpu, proc.cpu_percent() / (psutil.cpu_count() or 1))
                 peak_memory = max(peak_memory, proc.memory_info().rss)
         except Exception:
             pass

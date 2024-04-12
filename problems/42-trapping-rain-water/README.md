@@ -2,7 +2,7 @@
 id: 42
 slug: "trapping-rain-water"
 difficulty: "HARD"
-likes: 31184
+likes: 31226
 dislikes: 484
 category: "UNKNOWN"
 ---
@@ -55,4 +55,4 @@ Given `n` non-negative integers representing an elevation map where the width of
 
 | Total Accepted | Total Submissions | Acceptance Rate |
 | -------------- | ----------------- | --------------- |
-| 1997493 | 3253056 | 61.4% |
+| 2005425 | 3262955 | 61.46% |

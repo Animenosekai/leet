@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "leet"
 version = "1.0rc1"
-description = "Solve LeetCode problems for fun"
+description = "Let's solve LeetCode problems with fun ⛑️"
 license = "MIT"
 authors = ["Animenosekai <animenosekai.mail@gmail.com>"]
 maintainers = ["Animenosekai <animenosekai.mail@gmail.com>"]
@@ -33,6 +33,11 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
+requests = "^2.31.0"
+markdownify = "^0.12.1"
+rich = "^13.7.1"
+toml = "^0.10.2"
+pycparser = "^2.22"
 
 [tool.poetry.scripts]
 leet = 'leet.__main__:entry'
