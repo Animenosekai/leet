@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "leet"
+version = "1.0rc1"
+description = "Solve LeetCode problems for fun"
+license = "MIT"
+authors = ["Animenosekai <animenosekai.mail@gmail.com>"]
+maintainers = ["Animenosekai <animenosekai.mail@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/Animenosekai/leet"
+documentation = "https://github.com/Animenosekai/leet/blob/main/README.md"
+keywords = ["animenosekai", "leet", "leet-code", "problems", "algorithms"]
+classifiers = [
+    # Status
+    "Development Status :: 3 - Beta",
+
+    # Environment
+    "Environment :: Console",
+
+    # Audience
+    "Intended Audience :: Developers",
+
+    # Licensing
+    "License :: OSI Approved :: MIT License",
+
+    # Software Requirements
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+
+    # Code quality
+    "Typing :: Typed",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.scripts]
+leet = 'leet.__main__:entry'
+
+[tool.poetry.urls]
+"Issue Tracker" = "https://github.com/Animenosekai/leet/issues"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
