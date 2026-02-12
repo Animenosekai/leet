@@ -1,5 +1,7 @@
 # leet
 
+<img src="./assets/logo.jpg" alt="Logo" align="right" height="220px">
+
 Let's solve LeetCode problems with fun ⛑️
 
 This command line tool lets you solve LeetCode problems locally.
