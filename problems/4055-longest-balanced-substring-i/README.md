@@ -2,7 +2,7 @@
 id: 4055
 slug: "longest-balanced-substring-i"
 difficulty: "MEDIUM"
-likes: 308
+likes: 309
 dislikes: 26
 category: "ALGORITHMS"
 ---
