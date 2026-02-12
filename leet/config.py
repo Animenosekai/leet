@@ -1,53 +1,89 @@
+"""Configuration for the leet package."""
+
+from __future__ import annotations
+
 import dataclasses
 import pathlib
-import tomllib
+import typing
+
+try:
+    import tomllib  # pyright: ignore[reportMissingImports]
+except ImportError:
+    import toml as tomllib  # type: ignore[no-redef]
 
 CONFIGURATION_FILE = pathlib.Path("leet.toml")
 
 
 @dataclasses.dataclass
 class DownloadConfiguration:
+    """
+    Download configuration.
+
+    Parameters
+    ----------
+    language: str
+        The default language to use for downloads.
+    output: pathlib.Path
+        The default output path for downloads.
+    """
+
     language: str = "python3"
     output: pathlib.Path = dataclasses.field(default_factory=pathlib.Path)
 
 
 @dataclasses.dataclass
-class Configuration:
+class Config:
+    """
+    Global configuration.
+
+    Parameters
+    ----------
+    download: DownloadConfiguration
+        The download configuration.
+    """
+
     download: DownloadConfiguration
 
     @classmethod
-    def from_file(cls, file: pathlib.Path | None = None) -> "Configuration":
+    def from_file(cls, file: pathlib.Path | None = None) -> Config:
         """
+        Create a configuration from a file.
+
         Parameters
         ----------
-        cls
-        file: default = None
+        file: pathlib.Path | None
+            The file to read the configuration from.
 
         Returns
         -------
-        Configuration
+        Config
+            The configuration.
         """
         file = file or CONFIGURATION_FILE
-        if file.is_file():
-            config = tomllib.loads(file.read_text())
-        else:
-            config = {}
+        config = (
+            typing.cast(
+                dict[str, typing.Any],
+                tomllib.loads(file.read_text()),  # pyright: ignore[reportUnknownMemberType]
+            )
+            if file.is_file()
+            else {}
+        )
         download = config.get("download", {})
         return cls(
             download=DownloadConfiguration(
                 language=download.get("language", "python3"),
                 output=pathlib.Path(download.get("output", pathlib.Path())),
-            )
+            ),
         )
 
 
-def get_config():
+def get_config() -> Config:
     """
-    Returns the default values for the CLI.
+    Get the default values for the CLI.
 
     Returns
     -------
-    dict
+    Config
+        The configuration.
     """
-    return Configuration.from_file()
-
+    return Config.from_file()

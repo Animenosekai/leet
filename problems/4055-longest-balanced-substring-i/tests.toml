@@ -1,0 +1,23 @@
+language = "python3"
+[[tests]]
+expected = 4
+explanation = "The longest balanced substring is \"abba\" because both distinct characters 'a' and 'b' each appear exactly 2 times."
+
+[tests.arguments]
+s = "abbac"
+[[tests]]
+expected = 4
+explanation = "The longest balanced substring is \"zabc\" because the distinct characters 'z' , 'a' , 'b' , and 'c' each appear exactly 1 time."
+
+[tests.arguments]
+s = "zzabccy"
+[[tests]]
+expected = 2
+explanation = "One of the longest balanced substrings is \"ab\" because both distinct characters 'a' and 'b' each appear exactly 1 time. Another longest balanced substring is \"ba\" ."
+
+[tests.arguments]
+s = "aba"
+
+[function]
+"*" = "longestBalanced"
+python3 = "Solution().longestBalanced"

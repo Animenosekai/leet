@@ -1,0 +1,17 @@
+language = "python3"
+[[tests]]
+expected = "the cat was rat by the bat"
+
+[tests.arguments]
+dictionary = [ "cat", "bat", "rat",]
+sentence = "the cattle was rattled by the battery"
+[[tests]]
+expected = "a a b c"
+
+[tests.arguments]
+dictionary = [ "a", "b", "c",]
+sentence = "aadsfasf absbs bbab cadsfafs"
+
+[function]
+"*" = "replaceWords"
+python3 = "Solution().replaceWords"

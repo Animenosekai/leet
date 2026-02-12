@@ -1,0 +1,29 @@
+language = "python3"
+[[tests]]
+expected = true
+explanation = "1 * 1 + 2 * 2 = 5"
+
+[tests.arguments]
+c = 5
+
+[[tests]]
+expected = false
+
+[tests.arguments]
+c = 3
+
+[[tests]]
+expected = true
+
+[tests.arguments]
+c = 1
+
+[[tests]]
+expected = true
+
+[tests.arguments]
+c = 999999999
+
+[function]
+"*" = "sumOfSquareNumbers"
+python3 = "Solution().judgeSquareSum"

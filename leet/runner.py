@@ -1,4 +1,9 @@
+"""Module containing the base runner classes and testing structures."""
+
+from __future__ import annotations
+
 import abc
+import contextlib
 import dataclasses
 import pathlib
 import tempfile
@@ -7,19 +12,24 @@ import typing
 import uuid
 
 import psutil
+from typing_extensions import override
 
 
 @dataclasses.dataclass
 class Test:
-    arguments: typing.Dict[str, typing.Any]
-    expected: typing.Any
-    explanation: typing.Optional[str] = None
+    """A class representing a single test case."""
 
-    def to_dict(self) -> dict:
+    arguments: dict[str, typing.Any]
+    expected: typing.Any
+    explanation: str | None = None
+
+    def to_dict(self) -> dict[str, typing.Any]:
         """
+        Convert the test case to a dictionary.
+
         Returns
         -------
-        dict
+        dict[str, typing.Any]
         """
         return {
             "arguments": self.arguments,
@@ -29,29 +39,35 @@ class Test:
 
 
 class Runner(abc.ABC):
+    """An abstract class representing a runner for a specific language."""
+
     HEADER: str
-    "This will be prepended at the beginning of the solution and should contain all the imports and definitions needed to match LeetCode's environment."
+    "Header prepended to the solution with all environment imports and definitions."
     FOOTER: str
-    "This will be appended at the end of the solution and should perform all the tests. This takes `run_id`, `tests` and `function_name` as arguments."
+    "Footer appended to the solution to execute the tests."
 
     @classmethod
     def run(
         cls,
         code: str,
         function_name: str,
-        tests: typing.List[Test],
-        run_id: typing.Optional[str] = None,
-    ) -> typing.Tuple[float, float, float]:
+        tests: list[Test],
+        run_id: str | None = None,
+    ) -> tuple[float, float, float]:
         """
-        Runs the given code with the given tests.
+        Run the given code with the given tests.
 
         Parameters
         ----------
         cls
         code: str
+            The code to run.
         function_name: str
-        tests: List[Test] | list
-        run_id: NoneType | str, default = None
+            The name of the function to test.
+        tests: list[Test]
+            The list of tests to run.
+        run_id: str | None, default = None
+            The run ID to use.
 
         Returns
         -------
@@ -68,41 +84,45 @@ class Runner(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def run_file(cls, file: pathlib.Path) -> typing.Tuple[float, float, float]:
+    def run_file(cls, file: pathlib.Path) -> tuple[float, float, float]:
         """
-        Just runs the given file.
+        Run the given file.
 
         Parameters
         ----------
         cls
-        file: Path
+        file: pathlib.Path
+            The path to the file to run.
 
         Returns
         -------
         tuple
             A tuple with the time taken, peak CPU usage and peak memory usage.
         """
-        pass
 
     @classmethod
     @abc.abstractmethod
-    def encode_tests(cls, tests: typing.List[Test]) -> str:
+    def encode_tests(cls, tests: list[Test]) -> str:
         """
+        Encode the given tests into a string.
+
         Parameters
         ----------
         cls
-        tests: list
+        tests: list[Test]
+            The list of tests to encode.
 
         Returns
         -------
         str
         """
-        pass
 
     @classmethod
     @abc.abstractmethod
     def get_executable(cls) -> str:
         """
+        Return the path to the executable to use for the runner.
+
         Parameters
         ----------
         cls
@@ -111,92 +131,125 @@ class Runner(abc.ABC):
         -------
         str
         """
-        pass
 
     @classmethod
     def create_file(
         cls,
         code: str,
         function_name: str,
-        tests: typing.List[Test],
-        run_id: typing.Optional[str] = None,
-    ):
+        tests: list[Test],
+        run_id: str | None = None,
+    ) -> tuple[str, str]:
         """
-        Creates a file with the given tests.
+        Create a file with the given code and tests.
 
         Parameters
         ----------
         cls
         code: str
+            The code to write to the file.
         function_name: str
-        tests: List[Test] | list
-        run_id: NoneType | str, default = None
+            The name of the function to test.
+        tests: list[Test]
+            The list of tests to encode.
+        run_id: str | None, default = None
+            The run ID to use.
         """
         run_id = run_id or str(uuid.uuid4())
         run_id = run_id.replace("-", "_")
-        run_id = "".join([l for l in run_id if l.isalnum() or l == "_"])
+        run_id = "".join([char for char in run_id if char.isalnum() or char == "_"])
+        footer = cls.FOOTER.format(
+            run_id=run_id,
+            tests=cls.encode_tests(tests),
+            function_name=function_name,
+        )
         return (
             run_id,
-            f"{cls.HEADER}\n\n{code}\n\n{cls.FOOTER.format(run_id=run_id, tests=cls.encode_tests(tests), function_name=function_name)}\n        ",
+            f"{cls.HEADER}\n\n{code}\n\n{footer}\n        ",
         )
 
     @classmethod
-    def execute(cls, *args):
+    def execute(cls, *args: str | pathlib.Path) -> tuple[float, float, float]:
         """
+        Execute the given command and returns performance metrics.
+
         Parameters
         ----------
         cls
-        args
+        args: str | pathlib.Path
+            The command to execute.
         """
         peak_cpu = 0
         peak_memory = 0
         proc = psutil.Popen(args)
+        # First call to cpu_percent returns 0, we need it to initialize
+        proc.cpu_percent()
         start = time.perf_counter_ns()
-        try:
+        with contextlib.suppress(Exception):
             while proc.is_running():
-                peak_cpu = max(peak_cpu, proc.cpu_percent() / (psutil.cpu_count() or 1))
+                peak_cpu = max(
+                    peak_cpu,
+                    proc.cpu_percent() / (psutil.cpu_count() or 1),
+                )
                 peak_memory = max(peak_memory, proc.memory_info().rss)
-        except Exception:
-            pass
+                time.sleep(0.001)
         # time = proc.cpu_times().user + proc.cpu_times().system
-        return ((time.perf_counter_ns() - start) / 1000000.0, peak_cpu, peak_memory)
+        return (
+            (time.perf_counter_ns() - start) / 1000000.0,
+            peak_cpu,
+            peak_memory,
+        )
 
     @classmethod
     def function_location_from_name(cls, function_name: str, boilerplate: str) -> str:
         """
+        Return the location of the function in the boilerplate.
+
         Parameters
         ----------
         cls
         function_name: str
+            The name of the function.
+        boilerplate: str
+            The boilerplate code.
 
         Returns
         -------
         str
         """
+        del boilerplate
         return function_name
 
+
 class CompiledRunner(Runner):
+    """An abstract class representing a compiled runner."""
+
     @classmethod
     @abc.abstractmethod
-    def compile(cls, file: pathlib.Path, to: pathlib.Path):
+    def compile(cls, file: pathlib.Path, to: pathlib.Path) -> None:
         """
-        Compiles the given file.
+        Compile the given file.
 
         Parameters
         ----------
         cls
-        file: Path
-        to: Path
+        file: pathlib.Path
+            The path to the file to compile.
+        to: pathlib.Path
+            The path to the compiled file.
         """
-        pass
 
     @classmethod
-    def run_file(cls, file: pathlib.Path) -> typing.Tuple[float, float, float]:
+    @override
+    def run_file(cls, file: pathlib.Path) -> tuple[float, float, float]:
         """
+        Compile and run the given file.
+
         Parameters
         ----------
         cls
-        file: Path
+        file: pathlib.Path
+            The path to the file to run.
 
         Returns
         -------
@@ -206,4 +259,3 @@ class CompiledRunner(Runner):
             temp_file = pathlib.Path(temp_dir) / f"{file.stem}-{uuid.uuid4()}"
             cls.compile(file, temp_file)
             return cls.execute(temp_file)
-

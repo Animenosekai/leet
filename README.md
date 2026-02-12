@@ -29,6 +29,14 @@ This command line tool lets you solve LeetCode problems locally.
 
 ## Installation
 
+Using `uv` (recommended):
+
+```bash
+uv tool install git+https://github.com/Animenosekai/leet.git
+```
+
+Or using `pip`:
+
 ```bash
 pip install --upgrade git+https://github.com/Animenosekai/leet.git
 ```
@@ -63,6 +71,8 @@ options:
                         The language to use. If not provided, inferred from the file extension.
   --dry                 Generates a file which can be ran to test the function.
 ```
+
+The runner will also provide performance metrics (Runtime, CPU usage, and Peak Memory usage) after executing the tests.
 
 ### Download
 

@@ -1,0 +1,1 @@
+"""GraphQL requests for LeetCode."""
