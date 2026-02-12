@@ -27,7 +27,7 @@ This command line tool lets you solve LeetCode problems locally.
 - Download daily problem from LeetCode
 - Download boilerplate code for a problem
 - Download test cases for a problem
-- Run test cases for a problem, mimickig the LeetCode environment
+- Run test cases for a problem, mimicking the LeetCode environment
 
 ## Installation
 
